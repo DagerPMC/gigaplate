@@ -4,6 +4,10 @@ vars:
   DC: docker compose
 
 tasks:
+  default:
+    cmds:
+      - task: run
+
   run:
     desc: Run the application
     cmds:
