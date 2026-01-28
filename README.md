@@ -1,5 +1,7 @@
 # Gigaplate
 
+[![PyPI version](https://img.shields.io/pypi/v/gigaplate)](https://pypi.org/project/gigaplate/)
+
 Python project template generator with modular architecture.
 
 ## Installation
