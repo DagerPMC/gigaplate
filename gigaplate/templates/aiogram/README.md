@@ -87,5 +87,5 @@ async def get_or_create_user(telegram_id: int) -> User:
 ## Updates Strategy
 
 Configured via `config.updates_strategy`:
-- `"polling"` - long polling (default)
+- `"polling"` - long polling
 - Other values raise `ValueError` (webhook support not implemented)

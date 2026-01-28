@@ -10,8 +10,9 @@ REST API structure using FastAPI framework.
 | `controllers/__init__.py.j2` | `{name}/controllers/__init__.py` | Controllers package |
 | `controllers/router.py.j2` | `{name}/controllers/router.py` | Main router aggregator |
 | `controllers/api/__init__.py.j2` | `{name}/controllers/api/__init__.py` | API routes package |
+| `controllers/healthcheck.py.j2` | `{name}/controllers/healthcheck.py` | Health check endpoint |
 | `controllers/dependencies.py.j2` | `{name}/controllers/dependencies.py` | DI dependencies (only with sqlalchemy) |
-| `middlewares/__init__.py.j2` | `{name}/middlewares/__init__.py` | Middleware package |
+| `middlewares/__init__.py.j2` | `{name}/middlewares/__init__.py` | Middlewares package |
 | `middlewares/logging.py.j2` | `{name}/middlewares/logging.py` | Request logging middleware |
 
 ## Application Structure (`app.py`)

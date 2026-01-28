@@ -12,7 +12,6 @@ class BaseModule(Module):
         self.add_template("base/mypy.ini.j2", "mypy.ini")
         self.add_template("base/pyproject.toml.j2", "pyproject.toml")
         self.add_template("base/CLAUDE.md.j2", "CLAUDE.md")
-        self.add_template("base/AGENTS.md.j2", "AGENTS.md")
 
         self.add_template("base/config/local.yaml.j2", "config/local.yaml")
         self.add_template("base/config/local.yaml.example.j2", "config/local.yaml.example")

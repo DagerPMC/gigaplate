@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from {{ name }}.config import get_config
+from {{ name }}.config import Config
 
 _session = ContextVar[AsyncSession]("session")
 _session_transaction = ContextVar[AsyncSessionTransaction | None]("_session_transaction", default=None)
@@ -37,9 +37,8 @@ s = _Session()
 
 
 def init_session() -> None:
-    config = get_config()
     eng = create_async_engine(
-        config.database_dsn,
+        Config.c.database_dsn,
         echo=False,
         isolation_level="AUTOCOMMIT",
     )

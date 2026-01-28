@@ -1,0 +1,24 @@
+# {{ name }} configuration
+{% if has_fastapi %}
+
+app:
+  host: "0.0.0.0"
+  port: 8080
+  debug: true
+{% endif %}
+{% if has_sqlalchemy %}
+
+database_dsn: "postgresql+asyncpg://{{ name }}:{{ name }}@localhost:5432/{{ name }}"
+{% endif %}
+{% if has_redis %}
+
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+{% endif %}
+{% if has_aiogram %}
+
+token: "YOUR_BOT_TOKEN"
+updates_strategy: "polling"
+{% endif %}

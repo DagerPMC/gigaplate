@@ -6,33 +6,49 @@ Python project generated with gigaplate.
 ## Project Structure
 ```
 {{ name }}/
-├── {{ name }}/           # Main package
-│   ├── config.py        # Configuration (Pydantic + YAML)
+├── {{ name }}/
+│   ├── config.py
 {% if has_fastapi %}
-│   ├── app.py           # FastAPI application
-│   ├── controllers/     # API routes
-│   └── middleware/      # HTTP middleware
+│   ├── app.py
+│   ├── controllers/
+│   ├── middlewares/
 {% elif has_aiogram %}
-│   ├── main.py          # Bot entry point
-│   ├── controllers/     # Message handlers
-│   └── middlewares/     # Bot middlewares
+│   ├── main.py
+│   ├── controllers/
+│   ├── middlewares/
 {% else %}
-│   └── main.py          # Entry point
+│   ├── main.py
 {% endif %}
+{% if has_sqlalchemy and has_redis %}
+│   ├── db/
+│   │   ├── sql/
+│   │   │   ├── base.py
+│   │   │   ├── types.py
+│   │   │   ├── mixin.py
+│   │   │   ├── models/
+│   │   │   └── utils/
+│   │   └── redis/
+│   │       └── redis.py
+│   ├── ext/sqlalchemy/
+{% elif has_sqlalchemy %}
+│   ├── db/
+│   │   ├── base.py
+│   │   ├── types.py
+│   │   ├── mixin.py
+│   │   ├── models/
+│   │   └── utils/
+│   ├── ext/sqlalchemy/
+{% elif has_redis %}
+│   ├── db/
+│   │   └── redis.py
+{% endif %}
+│   └── utils/
+├── config/
 {% if has_sqlalchemy %}
-│   ├── db/              # Database layer
-│   │   ├── base.py      # SQLAlchemy base
-│   │   ├── types.py     # Custom types (uuid_pk, etc.)
-│   │   ├── mixin.py     # Mixins (CreatedAt, UpdatedAt)
-│   │   └── models/      # Database models
-│   └── ext/sqlalchemy/  # SQLAlchemy extensions
+├── migrations/
 {% endif %}
-{% if has_redis %}
-│   └── db/redis.py      # Redis connection
-{% endif %}
-├── config/              # Configuration files
-├── Taskfile.yaml        # Task runner commands
-└── docker-compose.yaml  # Docker services
+├── Taskfile.yaml
+└── docker-compose.yaml
 ```
 
 ## Commands

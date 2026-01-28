@@ -70,11 +70,6 @@ tasks:
     desc: Rollback last migration
     cmds:
       - uv run alembic downgrade -1
-
-  db:history:
-    desc: Show migration history
-    cmds:
-      - uv run alembic history
 {% endif %}
 {% if has_redis %}
 

@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from {{ name }}.config import init_config
 from {{ name }}.controllers.healthcheck import router as health_router
 from {{ name }}.controllers.router import router
-from {{ name }}.middleware.logging import LoggingMiddleware
+from {{ name }}.middlewares.logging import LoggingMiddleware
 {% if has_sqlalchemy and has_redis %}
 from {{ name }}.db.sql.utils.session import init_session
 from {{ name }}.db.redis.redis import init_redis

@@ -16,7 +16,7 @@ This module provides test infrastructure for generated projects.
 - `setup_test_config` - Session-scoped, sets CONFIG_PATH to test.yaml
 
 ### With FastAPI (`has_fastapi`)
-- `client` - AsyncClient for testing FastAPI app
+- `client` - TestClient for testing FastAPI app (synchronous)
 
 ### With SQLAlchemy (`has_sqlalchemy`)
 - `_run_migrations` - Session-scoped, runs migrations on setup, downgrades on teardown

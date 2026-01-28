@@ -6,7 +6,9 @@ Async Redis connection using `redis-py`.
 
 | Template | Output | Description |
 |----------|--------|-------------|
-| `db/redis.py.j2` | `{name}/db/redis.py` | Redis connection manager |
+| `db/__init__.py.j2` | `{name}/db/__init__.py` | DB package init (only without sqlalchemy) |
+| `db/redis/__init__.py.j2` | `{name}/db/redis/__init__.py` | Redis package init (only with sqlalchemy) |
+| `db/redis.py.j2` | `{name}/db/redis.py` or `{name}/db/redis/redis.py` | Redis connection manager |
 
 ## Redis Manager (`redis.py`)
 
@@ -48,6 +50,7 @@ URL format: `redis://{host}:{port}/{db}`
 ```
 {name}/
 └── db/
+    ├── __init__.py
     └── redis.py
 ```
 

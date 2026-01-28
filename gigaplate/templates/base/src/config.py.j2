@@ -4,67 +4,53 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel
 
-
-class ConfigError(Exception):
-    pass
-
-
 {% if has_fastapi %}
-class AppModel(BaseModel):
-    host: str = "0.0.0.0"
-    port: int = 8080
-    debug: bool = False
 
+class AppModel(BaseModel):
+    host: str
+    port: int
+    debug: bool = False
 
 {% endif %}
 {% if has_redis %}
+
 class RedisModel(BaseModel):
-    host: str = "localhost"
-    port: int = 6379
-    db: int = 0
+    host: str
+    port: int
+    db: int
 
     @property
     def url(self) -> str:
         return f"redis://{self.host}:{self.port}/{self.db}"
 
-
 {% endif %}
-class Config(BaseModel):
+
+class Settings(BaseModel):
 {% if has_fastapi %}
-    app: AppModel = AppModel()
+    app: AppModel
 {% endif %}
 {% if has_sqlalchemy %}
-    database_dsn: str = "postgresql+asyncpg://{{ name }}:{{ name }}@localhost:5432/{{ name }}"
+    database_dsn: str
 {% endif %}
 {% if has_redis %}
-    redis: RedisModel = RedisModel()
+    redis: RedisModel
 {% endif %}
 {% if has_aiogram %}
-    token: str = ""
-    updates_strategy: str = "polling"
+    token: str
+    updates_strategy: str
 {% endif %}
 
-    @classmethod
-    def from_yaml(cls, path: Path) -> "Config":
-        if not path.exists():
-            return cls()
-        with open(path) as f:
-            data = yaml.safe_load(f) or {}
-        return cls(**data)
+
+class Config:
+    c: Settings | None = None
+
+    def __new__(cls, *args, **kwargs):
+        raise RuntimeError("Config should not be instantiated")
 
 
-c: Config | None = None
-
-
-def get_config() -> Config:
-    if c is None:
-        raise ConfigError("Config not initialized. Call init_config() first.")
-    return c
-
-
-def init_config(path: Path | None = None) -> Config:
-    global c
+def init_config(path: Path | None = None) -> None:
     if path is None:
         path = Path(os.environ.get("CONFIG_PATH", "config/local.yaml"))
-    c = Config.from_yaml(path)
-    return c
+    with open(path) as f:
+        data = yaml.safe_load(f) or {}
+    Config.c = Settings(**data)

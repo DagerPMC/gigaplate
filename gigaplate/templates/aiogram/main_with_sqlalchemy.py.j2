@@ -3,7 +3,7 @@ import logging
 
 from aiogram import Bot, Dispatcher
 
-from {{ name }}.config import init_config, get_config
+from {{ name }}.config import Config, init_config
 from {{ name }}.controllers.router import router
 {% if has_redis %}
 from {{ name }}.db.sql.utils.session import init_session
@@ -20,13 +20,13 @@ logger = logging.getLogger(__name__)
 
 
 async def main() -> None:
-    config = init_config()
+    init_config()
     init_session()
 {% if has_redis %}
     init_redis()
 {% endif %}
 
-    bot = Bot(token=config.token)
+    bot = Bot(token=Config.c.token)
     dp = Dispatcher()
 
     dp.message.middleware(ThrottlingMiddleware())
@@ -36,10 +36,10 @@ async def main() -> None:
 
     logger.info("Starting bot...")
 
-    if config.updates_strategy == "polling":
+    if Config.c.updates_strategy == "polling":
         await dp.start_polling(bot)
     else:
-        raise ValueError(f"Unknown updates strategy: {config.updates_strategy}")
+        raise ValueError(f"Unknown updates strategy: {Config.c.updates_strategy}")
 
 
 if __name__ == "__main__":

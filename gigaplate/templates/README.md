@@ -12,7 +12,8 @@ templates/
 ├── sqlalchemy_ext/ # Included with sqlalchemy
 ├── redis/          # --redis flag
 ├── aiogram/        # --aiogram flag
-└── cli/            # --cli flag
+├── cli/            # --cli flag
+└── pytest/         # --pytest flag
 ```
 
 ## Template Variables
@@ -28,6 +29,7 @@ All templates receive these context variables:
 | `has_redis` | bool | Redis enabled |
 | `has_aiogram` | bool | Aiogram enabled |
 | `has_cli` | bool | CLI enabled |
+| `has_pytest` | bool | Pytest enabled |
 
 ## Jinja2 Settings
 

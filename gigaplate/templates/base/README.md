@@ -15,7 +15,6 @@ Core project structure generated for every project.
 | `mypy.ini.j2` | `mypy.ini` | Mypy strict config |
 | `pyproject.toml.j2` | `pyproject.toml` | Project metadata with conditional dependencies |
 | `CLAUDE.md.j2` | `CLAUDE.md` | AI assistant instructions |
-| `AGENTS.md.j2` | `AGENTS.md` | Multi-agent coordination |
 | `config/local.yaml.j2` | `config/local.yaml` | Local config file |
 | `config/local.yaml.example.j2` | `config/local.yaml.example` | Config template |
 | `src/__init__.py.j2` | `{name}/__init__.py` | Package init |
@@ -29,6 +28,7 @@ Core project structure generated for every project.
 - Uses Pydantic BaseModel for validation
 - Loads from YAML file (`config/local.yaml`)
 - Supports `CONFIG_PATH` env variable
+- Access via `Config.c` (static class, not instantiable)
 - Conditional sections based on modules:
   - `has_fastapi`: AppModel (host, port, debug)
   - `has_sqlalchemy`: database_dsn
@@ -44,6 +44,7 @@ All base templates have access to:
 - `has_redis` - bool
 - `has_aiogram` - bool
 - `has_cli` - bool
+- `has_pytest` - bool
 
 ## Conditional Logic
 

@@ -1,13 +1,24 @@
+# {{ name }} test configuration
+{% if has_fastapi %}
+
+app:
+  host: "0.0.0.0"
+  port: 8080
+  debug: true
+{% endif %}
 {% if has_sqlalchemy %}
+
 database_dsn: "postgresql+asyncpg://{{ name }}_test:{{ name }}_test@localhost:5433/{{ name }}_test"
 {% endif %}
 {% if has_redis %}
+
 redis:
   host: "localhost"
   port: 6380
   db: 0
 {% endif %}
 {% if has_aiogram %}
+
 token: "TEST_BOT_TOKEN"
 updates_strategy: "polling"
 {% endif %}
