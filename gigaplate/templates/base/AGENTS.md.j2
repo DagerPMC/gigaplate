@@ -1,0 +1,15 @@
+# Agents
+
+## Development Agent
+Responsible for implementing features and fixing bugs.
+Focus on maintaining code quality and following established patterns.
+
+## Database Agent
+Responsible for database schema changes and migrations.
+{% if has_sqlalchemy %}
+Use Alembic for migrations: `task db:revision "description"` then `task db:upgrade`.
+{% endif %}
+
+## Testing Agent
+Responsible for writing and maintaining tests.
+Ensure adequate test coverage for all new features.

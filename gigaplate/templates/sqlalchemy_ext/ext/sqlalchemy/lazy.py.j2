@@ -1,0 +1,77 @@
+import typing as t
+from functools import wraps
+
+from sqlalchemy import and_, select, inspect
+from sqlalchemy.orm import selectinload
+from sqlalchemy.sql import Select
+from sqlalchemy.sql.base import ExecutableOption
+
+{% if has_redis %}
+from {{ name }}.db.sql.base import Base
+from {{ name }}.db.sql.utils.session import s
+{% else %}
+from {{ name }}.db.base import Base
+from {{ name }}.db.utils.session import s
+{% endif %}
+
+_LAZY_FUNC_TYPE = t.Callable[
+    [t.Any],
+    t.Awaitable[t.Any],
+]
+
+_LAZY_FUNC = t.TypeVar(
+    "_LAZY_FUNC",
+    bound=_LAZY_FUNC_TYPE,
+)
+
+
+def _get_lazy_reload_query(
+    model: Base,
+    relation: t.Any,
+    strategy: t.Callable,
+    options: t.Sequence[ExecutableOption],
+) -> Select:
+    class_ = type(model)
+    clauses = [
+        getattr(class_, pk.name) == getattr(model, pk.name)
+        for pk in class_.__mapper__.primary_key
+    ]
+    query = (
+        select(class_)
+        .where(and_(*clauses))
+        .options(strategy(relation))
+    )
+    if options:
+        query = query.options(*options)
+    return query
+
+
+class lazy:
+    def __init__(
+        self,
+        relation: t.Any | str,
+        strategy: t.Callable = selectinload,
+    ):
+        self.relation = relation
+        self.strategy = strategy
+
+    def __call__(self, f: _LAZY_FUNC) -> _LAZY_FUNC:
+        @wraps(f)
+        async def wrapper(model: Base, *args: ExecutableOption) -> t.Any:
+            inspected = inspect(model)
+            assert inspected
+            relation = self.relation
+            if isinstance(relation, str):
+                relation = getattr(type(model), self.relation)
+            if relation.key in inspected.unloaded:
+                await s.session.scalar(
+                    _get_lazy_reload_query(
+                        model=model,
+                        relation=relation,
+                        strategy=self.strategy,
+                        options=args,
+                    )
+                )
+            return getattr(model, relation.key)
+
+        return t.cast(_LAZY_FUNC, wrapper)

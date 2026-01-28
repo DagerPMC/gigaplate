@@ -1,0 +1,45 @@
+import time
+from collections.abc import Awaitable, Callable
+from typing import Any
+
+from aiogram import BaseMiddleware
+from aiogram.types import Message, TelegramObject
+
+
+class ThrottlingMiddleware(BaseMiddleware):
+    def __init__(self, rate_limit: float = 0.5, max_users: int = 500) -> None:
+        self.rate_limit = rate_limit
+        self.max_users = max_users
+        self.user_last_message: dict[int, float] = {}
+
+    async def __call__(
+        self,
+        handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
+        event: TelegramObject,
+        data: dict[str, Any],
+    ) -> Any:
+        if not isinstance(event, Message):
+            return await handler(event, data)
+
+        user_id = event.from_user.id if event.from_user else None
+        if user_id is None:
+            return await handler(event, data)
+
+        current_time = time.time()
+        last_message_time = self.user_last_message.get(user_id, 0)
+
+        if current_time - last_message_time < self.rate_limit:
+            return None
+
+        self.user_last_message[user_id] = current_time
+
+        if len(self.user_last_message) > self.max_users:
+            self._cleanup()
+
+        return await handler(event, data)
+
+    def _cleanup(self) -> None:
+        sorted_users = sorted(self.user_last_message.items(), key=lambda x: x[1])
+        users_to_remove = len(self.user_last_message) - self.max_users
+        for user_id, _ in sorted_users[:users_to_remove]:
+            del self.user_last_message[user_id]

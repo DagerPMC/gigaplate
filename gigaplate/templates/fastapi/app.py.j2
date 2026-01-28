@@ -1,0 +1,40 @@
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+
+from {{ name }}.config import init_config
+from {{ name }}.controllers.healthcheck import router as health_router
+from {{ name }}.controllers.router import router
+from {{ name }}.middleware.logging import LoggingMiddleware
+{% if has_sqlalchemy and has_redis %}
+from {{ name }}.db.sql.utils.session import init_session
+from {{ name }}.db.redis.redis import init_redis
+{% elif has_sqlalchemy %}
+from {{ name }}.db.utils.session import init_session
+{% endif %}
+{% if has_redis and not has_sqlalchemy %}
+from {{ name }}.db.redis import init_redis
+{% endif %}
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    init_config()
+{% if has_sqlalchemy %}
+    init_session()
+{% endif %}
+{% if has_redis %}
+    init_redis()
+{% endif %}
+    yield
+
+
+app = FastAPI(
+    title="{{ name }}",
+    lifespan=lifespan,
+)
+
+app.add_middleware(LoggingMiddleware)
+app.include_router(health_router)
+app.include_router(router)

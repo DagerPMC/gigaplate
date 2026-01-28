@@ -1,0 +1,35 @@
+from contextvars import ContextVar
+
+from redis import asyncio as aioredis
+from redis.asyncio import Redis
+
+from {{ name }}.config import get_config
+
+_redis_ctx = ContextVar[Redis]("redis")
+_redises: dict[str, Redis] = {}
+
+
+class _Redis:
+    @property
+    def redis(self) -> Redis:
+        return _redis_ctx.get()
+
+    @redis.setter
+    def redis(self, value: Redis) -> None:
+        _redis_ctx.set(value)
+
+
+r = _Redis()
+
+
+def init_redis() -> Redis:
+    config = get_config()
+    dsn = config.redis.url
+    if not (pooled := _redises.get(dsn)):
+        _redis = aioredis.from_url(dsn, encoding="utf-8", decode_responses=True)
+        _redises[dsn] = _redis
+    else:
+        _redis = pooled
+
+    r.redis = _redis
+    return _redis

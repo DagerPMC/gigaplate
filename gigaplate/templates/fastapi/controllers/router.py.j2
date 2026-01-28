@@ -1,0 +1,7 @@
+from fastapi import APIRouter
+{% if has_sqlalchemy %}
+
+from {{ name }}.controllers.dependencies import SessionDep
+{% endif %}
+
+router = APIRouter()

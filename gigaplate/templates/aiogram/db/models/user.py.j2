@@ -1,0 +1,22 @@
+from sqlalchemy import BigInteger
+from sqlalchemy.orm import Mapped, mapped_column
+
+{% if has_redis %}
+from {{ name }}.db.sql.base import Base
+from {{ name }}.db.sql.mixin import CreatedAtMixin, UpdatedAtMixin
+from {{ name }}.db.sql.types import int_pk
+{% else %}
+from {{ name }}.db.base import Base
+from {{ name }}.db.mixin import CreatedAtMixin, UpdatedAtMixin
+from {{ name }}.db.types import int_pk
+{% endif %}
+
+
+class User(Base, CreatedAtMixin, UpdatedAtMixin):
+    __tablename__ = "users"
+
+    id: Mapped[int_pk]
+    telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True)
+    username: Mapped[str | None]
+    first_name: Mapped[str | None]
+    last_name: Mapped[str | None]

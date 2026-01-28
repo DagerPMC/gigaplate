@@ -1,0 +1,7 @@
+from pathlib import Path
+
+from {{ name }}.config import Config, init_config as _init_config
+
+
+def init_config(path: Path | None = None) -> Config:
+    return _init_config(path)

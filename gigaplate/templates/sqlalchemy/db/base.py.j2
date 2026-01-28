@@ -1,0 +1,11 @@
+from sqlalchemy import String
+from sqlalchemy.orm import DeclarativeBase
+
+from {{ name }}.db.types import str50, str255
+
+
+class Base(DeclarativeBase):
+    type_annotation_map = {
+        str50: String(50),
+        str255: String(255),
+    }

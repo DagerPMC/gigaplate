@@ -1,0 +1,8 @@
+import click
+
+from {{ name }}.utils.setup import init_config
+
+
+@click.group()
+def cli() -> None:
+    init_config()

@@ -1,0 +1,74 @@
+services:
+  {{ name }}:
+    build:
+      context: .
+      target: dev
+    volumes:
+      - .:/app
+      - /app/.venv
+{% if has_fastapi %}
+    ports:
+      - "8080:8080"
+    command: uvicorn {{ name }}.app:app --host 0.0.0.0 --port 8080 --reload
+{% endif %}
+{% if has_sqlalchemy or has_redis %}
+    depends_on:
+{% if has_sqlalchemy %}
+      - postgres
+{% endif %}
+{% if has_redis %}
+      - redis
+{% endif %}
+{% endif %}
+    environment:
+      - CONFIG_PATH=/app/config/local.yaml
+{% if has_sqlalchemy %}
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: {{ name }}
+      POSTGRES_PASSWORD: {{ name }}
+      POSTGRES_DB: {{ name }}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+{% if has_pytest %}
+
+  postgres-test:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: {{ name }}_test
+      POSTGRES_PASSWORD: {{ name }}_test
+      POSTGRES_DB: {{ name }}_test
+    ports:
+      - "5433:5432"
+{% endif %}
+{% endif %}
+{% if has_redis %}
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+{% if has_pytest %}
+
+  redis-test:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+{% endif %}
+{% endif %}
+{% if has_sqlalchemy or has_redis %}
+
+volumes:
+{% if has_sqlalchemy %}
+  postgres_data:
+{% endif %}
+{% if has_redis %}
+  redis_data:
+{% endif %}
+{% endif %}

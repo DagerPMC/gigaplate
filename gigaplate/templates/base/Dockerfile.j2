@@ -1,0 +1,49 @@
+FROM python:3.14-slim AS base
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+RUN uv venv /opt/venv
+
+COPY pyproject.toml uv.lock* ./
+
+RUN uv sync --frozen --no-install-project --no-dev
+
+FROM base AS prod
+
+COPY {{ name }}/ {{ name }}/
+COPY config/ config/
+{% if has_sqlalchemy %}
+COPY migrations/ migrations/
+COPY alembic.ini .
+{% endif %}
+
+{% if has_fastapi %}
+EXPOSE 8080
+
+CMD ["uvicorn", "{{ name }}.app:app", "--host", "0.0.0.0", "--port", "8080"]
+{% else %}
+CMD ["python", "-m", "{{ name }}"]
+{% endif %}
+
+FROM base AS dev
+
+RUN uv sync --frozen --no-install-project
+
+COPY . .
+
+{% if has_fastapi %}
+EXPOSE 8080
+
+CMD ["uvicorn", "{{ name }}.app:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+{% else %}
+CMD ["python", "-m", "{{ name }}"]
+{% endif %}

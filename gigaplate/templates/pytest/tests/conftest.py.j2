@@ -1,0 +1,76 @@
+import os
+from pathlib import Path
+
+import pytest
+
+{% if has_fastapi %}
+from httpx import ASGITransport, AsyncClient
+{% endif %}
+{% if has_sqlalchemy %}
+from alembic import command
+from alembic.config import Config as AlembicConfig
+from sqlalchemy.ext.asyncio import AsyncSession
+{% endif %}
+{% if has_redis %}
+from redis.asyncio import Redis
+{% endif %}
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_config() -> None:
+    os.environ["CONFIG_PATH"] = str(Path(__file__).parent.parent / "config" / "test.yaml")
+
+
+{% if has_sqlalchemy %}
+@pytest.fixture(scope="session")
+def _run_migrations() -> None:
+    alembic_cfg = AlembicConfig("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+    yield
+    command.downgrade(alembic_cfg, "base")
+
+
+@pytest.fixture
+async def session(_run_migrations: None) -> AsyncSession:
+{% if has_redis %}
+    from {{ name }}.db.sql.utils.session import s, init_session
+{% else %}
+    from {{ name }}.db.utils.session import s, init_session
+{% endif %}
+    from {{ name }}.config import init_config
+
+    init_config()
+    init_session()
+
+    async with s.maker() as session:
+        s.session = session
+        yield session
+        await session.rollback()
+
+
+{% endif %}
+{% if has_fastapi %}
+@pytest.fixture
+async def client() -> AsyncClient:
+    from {{ name }}.app import app
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        yield client
+
+
+{% endif %}
+{% if has_redis %}
+@pytest.fixture
+async def redis_client() -> Redis:
+{% if has_sqlalchemy %}
+    from {{ name }}.db.redis.redis import init_redis
+{% else %}
+    from {{ name }}.db.redis import init_redis
+{% endif %}
+    from {{ name }}.config import init_config
+
+    init_config()
+    client = init_redis()
+    yield client
+    await client.flushdb()
+{% endif %}

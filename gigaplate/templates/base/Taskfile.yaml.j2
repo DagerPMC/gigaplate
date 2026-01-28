@@ -1,0 +1,92 @@
+version: '3'
+
+vars:
+  DC: docker compose
+
+tasks:
+  run:
+    desc: Run the application
+    cmds:
+{% if has_fastapi %}
+      - uv run uvicorn {{ name }}.app:app --reload
+{% else %}
+      - uv run python -m {{ name }}
+{% endif %}
+
+  build:
+    desc: Build Docker image
+    cmds:
+      - "{{ '{{.DC}}' }} build"
+
+  up:
+    desc: Start all services
+    cmds:
+      - "{{ '{{.DC}}' }} up -d"
+
+  down:
+    desc: Stop all services
+    cmds:
+      - "{{ '{{.DC}}' }} down"
+
+  logs:
+    desc: View logs
+    cmds:
+      - "{{ '{{.DC}}' }} logs -f"
+
+  lint:
+    desc: Run linters
+    cmds:
+      - uv run ruff check .
+      - uv run ruff format --check .
+      - uv run mypy {{ name }}/
+
+  format:
+    desc: Format code
+    cmds:
+      - uv run ruff format .
+      - uv run ruff check --fix .
+
+  pre-commit:
+    desc: Run pre-commit checks
+    deps: [lint]
+
+  ipython:
+    desc: Run IPython shell
+    cmds:
+      - uv run ipython
+{% if has_sqlalchemy %}
+
+  db:revision:
+    desc: Create new migration
+    cmds:
+      - uv run alembic revision --autogenerate -m "{{ '{{.CLI_ARGS}}' }}"
+
+  db:upgrade:
+    desc: Run migrations
+    cmds:
+      - uv run alembic upgrade head
+
+  db:downgrade:
+    desc: Rollback last migration
+    cmds:
+      - uv run alembic downgrade -1
+
+  db:history:
+    desc: Show migration history
+    cmds:
+      - uv run alembic history
+{% endif %}
+{% if has_redis %}
+
+  redis:cli:
+    desc: Open Redis CLI
+    cmds:
+      - "{{ '{{.DC}}' }} exec redis redis-cli"
+{% endif %}
+{% if has_pytest %}
+
+  test:
+    desc: Run tests
+    cmds:
+      - uv run pytest tests/ {{ '{{.CLI_ARGS}}' }}
+{% endif %}

@@ -1,0 +1,50 @@
+version: '3'
+
+vars:
+  DC: docker compose
+
+tasks:
+  run:
+    desc: Run gigaplate
+    cmds:
+      - uv run python -m gigaplate {{.CLI_ARGS}}
+
+  build:
+    desc: Build Docker image
+    cmds:
+      - "{{.DC}} build"
+
+  lint:
+    desc: Run linters
+    cmds:
+      - uv run ruff check .
+      - uv run ruff format --check .
+
+  format:
+    desc: Format code
+    cmds:
+      - uv run ruff format .
+      - uv run ruff check --fix .
+
+  pre-commit:
+    desc: Run pre-commit checks
+    cmds:
+      - task: lint
+
+  ipython:
+    desc: Run IPython shell
+    cmds:
+      - uv run ipython
+
+  test:
+    desc: Run tests
+    cmds:
+      - uv run pytest tests/ {{.CLI_ARGS}}
+
+  test:generate:
+    desc: Generate test projects
+    cmds:
+      - rm -rf ../test_basic ../test_api ../test_bot
+      - uv run python -m gigaplate test_basic
+      - uv run python -m gigaplate test_api --fastapi --sqlalchemy
+      - uv run python -m gigaplate test_bot --aiogram --sqlalchemy --redis

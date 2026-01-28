@@ -1,0 +1,158 @@
+import sys
+import typing as t
+import logging
+from enum import IntEnum
+from functools import wraps
+
+{% if has_redis %}
+from {{ name }}.db.sql.utils.session import s
+{% else %}
+from {{ name }}.db.utils.session import s
+{% endif %}
+
+log = logging.getLogger(__name__)
+
+_TRANSACTIONAL_FUNC_TYPE = t.Callable[
+    ...,
+    t.Awaitable[t.Any],
+]
+
+_TRANSACTIONAL_FUNC = t.TypeVar(
+    "_TRANSACTIONAL_FUNC",
+    bound=_TRANSACTIONAL_FUNC_TYPE,
+)
+
+
+class InconsistentIsolationLevels(Exception):
+    pass
+
+
+class IsolationLevel(IntEnum):
+    AUTOCOMMIT = 1
+    READ_COMMITTED = 2
+    REPEATABLE_READ = 3
+    SERIALIZABLE = 4
+
+
+async def _begin_transaction(
+    isolation_level: IsolationLevel,
+) -> None:
+    await s.session.commit()
+    _isolation_level = isolation_level.name.replace("_", " ")
+    await s.session.connection(
+        execution_options={
+            "isolation_level": _isolation_level  # type: ignore[typeddict-item]
+        }
+    )
+    s.session_transaction = s.session.begin_nested()
+    await s.session_transaction.start()
+
+
+async def _check_isolation_levels_consistency(
+    isolation_level: IsolationLevel,
+) -> None:
+    conn = await s.session.connection()
+    assert conn.sync_connection
+    top_isolation_level = (
+        conn.sync_connection
+        .get_execution_options()
+        .get("isolation_level", IsolationLevel.AUTOCOMMIT.name)
+    ).replace(" ", "_")
+    if isolation_level > IsolationLevel[top_isolation_level]:
+        log.error(
+            f"Nested isolation level is: {isolation_level} "
+            f"which is more strict than top isolation level: "
+            f"{top_isolation_level}"
+        )
+        raise InconsistentIsolationLevels()
+
+
+async def _end_transaction(f: _TRANSACTIONAL_FUNC, nested: bool) -> None:
+    if not s.session.is_active:
+        assert s.session_transaction
+        await s.session_transaction.rollback()
+        if nested:
+            log.error(
+                f"Transaction rollback on {f.__name__}, "
+                f"outer func deals with new transaction using "
+                f"autobegin"
+            )
+        return
+
+    if not nested:
+        try:
+            assert s.session_transaction
+            await s.session_transaction.commit()
+        except Exception as new_original_exception:
+            exc_type, exc_value, exc_trace = sys.exc_info()
+            try:
+                assert s.session_transaction
+                await s.session_transaction.rollback()
+            except Exception:
+                log.exception("Error during transaction rollback")
+            raise new_original_exception.with_traceback(exc_trace)
+
+
+def _transactional(
+    f: _TRANSACTIONAL_FUNC,
+    isolation_level: IsolationLevel,
+) -> _TRANSACTIONAL_FUNC:
+    @wraps(f)
+    async def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
+        nested = s.session.in_nested_transaction()
+        try:
+            if not nested:
+                await _begin_transaction(isolation_level)
+            else:
+                await _check_isolation_levels_consistency(isolation_level)
+            assert s.session_transaction is not None
+            try:
+                result = await f(*args, **kwargs)
+            except Exception as new_original_exception:
+                exc_type, exc_value, exc_trace = sys.exc_info()
+                try:
+                    if s.session_transaction.is_active:
+                        await s.session_transaction.rollback()
+                except Exception:
+                    log.exception("Error during transaction rollback")
+                raise new_original_exception.with_traceback(exc_trace)
+            await _end_transaction(f, nested)
+        finally:
+            if not nested:
+                await s.session.commit()
+                s.session_transaction = None
+                await s.session.connection(
+                    execution_options={"isolation_level": "AUTOCOMMIT"}
+                )
+        return result
+
+    return t.cast(_TRANSACTIONAL_FUNC, wrapper)
+
+
+@t.overload
+def transactional(
+    f: _TRANSACTIONAL_FUNC,
+    /,
+) -> _TRANSACTIONAL_FUNC: ...
+
+
+@t.overload
+def transactional(
+    *,
+    isolation_level: IsolationLevel = IsolationLevel.READ_COMMITTED,
+) -> t.Callable[[_TRANSACTIONAL_FUNC], _TRANSACTIONAL_FUNC]: ...
+
+
+def transactional(
+    f: _TRANSACTIONAL_FUNC | None = None,
+    /,
+    *,
+    isolation_level: IsolationLevel = IsolationLevel.READ_COMMITTED,
+) -> _TRANSACTIONAL_FUNC | t.Callable[[_TRANSACTIONAL_FUNC], _TRANSACTIONAL_FUNC]:
+    if f:
+        return _transactional(f, isolation_level)
+
+    def decorator(_f: _TRANSACTIONAL_FUNC) -> _TRANSACTIONAL_FUNC:
+        return _transactional(_f, isolation_level)
+
+    return decorator

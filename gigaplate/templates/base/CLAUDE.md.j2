@@ -1,0 +1,67 @@
+# {{ name }}
+
+## Overview
+Python project generated with gigaplate.
+
+## Project Structure
+```
+{{ name }}/
+├── {{ name }}/           # Main package
+│   ├── config.py        # Configuration (Pydantic + YAML)
+{% if has_fastapi %}
+│   ├── app.py           # FastAPI application
+│   ├── controllers/     # API routes
+│   └── middleware/      # HTTP middleware
+{% elif has_aiogram %}
+│   ├── main.py          # Bot entry point
+│   ├── controllers/     # Message handlers
+│   └── middlewares/     # Bot middlewares
+{% else %}
+│   └── main.py          # Entry point
+{% endif %}
+{% if has_sqlalchemy %}
+│   ├── db/              # Database layer
+│   │   ├── base.py      # SQLAlchemy base
+│   │   ├── types.py     # Custom types (uuid_pk, etc.)
+│   │   ├── mixin.py     # Mixins (CreatedAt, UpdatedAt)
+│   │   └── models/      # Database models
+│   └── ext/sqlalchemy/  # SQLAlchemy extensions
+{% endif %}
+{% if has_redis %}
+│   └── db/redis.py      # Redis connection
+{% endif %}
+├── config/              # Configuration files
+├── Taskfile.yaml        # Task runner commands
+└── docker-compose.yaml  # Docker services
+```
+
+## Commands
+- `task run` - Run the application
+- `task build` - Build Docker image
+- `task up` - Start all services
+- `task down` - Stop all services
+- `task lint` - Run linters
+- `task format` - Format code
+- `task ipython` - Interactive shell
+{% if has_sqlalchemy %}
+- `task db:revision` - Create migration
+- `task db:upgrade` - Run migrations
+- `task db:downgrade` - Rollback migration
+{% endif %}
+{% if has_redis %}
+- `task redis:cli` - Redis CLI
+{% endif %}
+
+## Configuration
+Configuration is loaded from `config/local.yaml`. Copy `config/local.yaml.example` as a starting point.
+
+## Code Style
+- Strictly follow project's existing code style
+- Line length limit: 80 characters
+- Do not write comments or docstrings
+- Use type hints
+
+## Documentation Updates
+Major changes must trigger updates to:
+- `CLAUDE.md` - Update project structure, commands, or guidelines
+- `README.md` - Update user-facing documentation
