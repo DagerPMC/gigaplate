@@ -45,6 +45,7 @@ gigaplate my_project -- fastapi,sqlalchemy,redis
 | Redis | `--redis`, `-r` | Redis connection |
 | Aiogram | `--aiogram`, `-a` | Telegram bot with aiogram |
 | CLI | `--cli`, `-c` | Click CLI interface |
+| Pytest | `--pytest`, `-t` | Test infrastructure |
 
 ## Module Interactions
 
